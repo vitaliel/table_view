@@ -2,7 +2,7 @@ module TableView; end
 
 # TODO sum, count columns
 # @deposits_table = TableView::Table.new(Account.deposits(@start_date), [
-#                                      { :group => true, :value => Proc.new {|row| row.space }, :attr => {:class => 'group1'}},
+#                                      { :group => true, :count => true,  :value => Proc.new {|row| row.space }, :attr => {:class => 'group1'}},
 #                                      { :header => "Buyer", :display => Proc.new {|acc| check_login acc.payer }, :cell_attr => {:align => :right}},
 #                                      { :header => "Date", :display => Proc.new {|acc| acc.created_at.to_s :short }},
 #                                      { :header => "Amount", :display => Proc.new {|acc| acc.amount }, :summary => :sum},
@@ -22,7 +22,7 @@ class TableView::Table
   # :header => text, :type => :integer, :display => block(row)
   # :summary => summary function :sum, :avg
   def add_column(col)
-    if col.is_a? Array
+    if col.is_a?(Array)
       self.columns += col
     else
       self.columns << col
@@ -30,7 +30,7 @@ class TableView::Table
   end
 
   def header
-    "<table><thead><tr>" + columns.map{ |c| c[:header] ? content_tag('th', c[:header]) : '' }.join('') + "</tr></thead>\n"
+    "<table><thead><tr>" << columns.map{ |c| c[:header] ? content_tag('th', c[:header]) : '' }.join('') << "</tr></thead>\n"
   end
 
   def row(row)
@@ -41,17 +41,23 @@ class TableView::Table
       next_value = gr[:value].call(row)
 
       if next_value != gr[:current_value]
-        # TODO calculate row count
-        rez = tr(td(next_value, :colspan => visible_column_count), gr[:attr])
         gr[:current_value] = next_value
+
+        td_value = "" << next_value
+
+        if gr[:count]
+          td_value << " " << content_tag('span', "(%d items)" % count_group_records(gr), :class => 'item_count')
+        end
+
+        rez = tr(td(td_value, :colspan => visible_column_count), gr[:attr])
       end
     end
 
-    rez + tr(columns.map{|col| cell(row, col)}.join(''))
+    rez << tr(columns.map{|col| cell(row, col)}.join(''))
   end
 
   def tr(str, attr = nil)
-    content_tag('tr', str, attr) + "\n"
+    content_tag('tr', str, attr) << "\n"
   end
 
   def td(str, attr = nil)
@@ -73,19 +79,26 @@ class TableView::Table
     rez = ''
 
     if has_summary && data.size > 1
-      rez += '<tfoot><tr>' +
-        columns.map{|col| td(col[:summary_value] ? '<b>' + col[:summary_value].to_s + '</b>': '&nbsp;')}.join +
-        '</tr></tfoot>'
+      rez << '<tfoot><tr>' << columns.map {|col| td(col[:summary_value] ? '<b>' << col[:summary_value].to_s << '</b>': '&nbsp;')}.join << '</tr></tfoot>'
     end
 
-    rez + "</table>"
+    rez << "</table>"
   end
 
   def to_s
     if data.size > 0
       init_functions
       init_groups
-      header + content_tag("tbody", data.map { |row| row(row)}.join('')) + footer
+
+      tbody = ""
+      @idx = 0
+
+      while @idx < data.size
+        tbody << row(data[@idx])
+        @idx += 1
+      end
+
+      header << content_tag("tbody", tbody) << footer
     else
       "<p class=\"no_records\">No records</p>"
     end
@@ -96,7 +109,7 @@ class TableView::Table
 
     for col in columns
       if col[:group]
-        groups << {:value => col[:value], :current_value => :no_value, :row_count => 0, :attr => col[:attr] }
+        groups << { :current_value => :no_value, :row_count => 0 }.update(col)
       end
     end
   end
@@ -116,11 +129,23 @@ class TableView::Table
     end
   end
 
-  def sum_func col, value
+  def sum_func(col, value)
     col[:summary_value] += value
   end
 
-  def avg_func col, value
+  def avg_func(col, value)
     # TODO
+  end
+
+  def count_group_records(group)
+    old_idx = @idx
+
+    while @idx < data.size && group[:value].call(data[@idx]) == group[:current_value]
+      @idx += 1
+    end
+
+    count = @idx - old_idx
+    @idx = old_idx
+    count
   end
 end
