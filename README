@@ -1,0 +1,59 @@
+TableView
+=========
+
+This rails plugin will help you to draw useful html tables with grouping, summaries.
+Do not count anymore columns for table colspan.
+
+Example
+=======
+
+<% table_view(@tasks) do |table| %>
+<% table.column(nil, :group => true, :attr => {:class => 'group1'}, :value => Proc.new {|t| t.project ? h(t.project.name) : nil }) do |t| %>
+<% end %>
+
+<% table.column("&nbsp;") do |t| %>
+<%= mark_control(t) %>
+<% end %>
+
+<% table.column("&nbsp;") do |t| %>
+<%= link_to(image_tag("ico_edit.gif"), edit_task_path(t)) %>
+<% end %>
+
+<% table.column("Importance", :cell_attr => {:align => :right}) do |t| %>
+<%= edit_importance_inplace t %>
+<% end %>
+
+<% table.column("Name") do |t| %>
+<%= link_to(display_task_name(t), t, :class => 'obj') %>
+<% end %>
+
+<% table.column("Age") do |t| %>
+<%= time_ago_in_words(t.created_at) %>
+<% end %>
+
+<% table.column("Estimated Time", :cell_attr => {:align => :right}) do |t| %>
+<%= edit_estimated_time t %>
+<% end %>
+
+<% table.column("Real Time", :cell_attr => {:align => :right}) do |t| %>
+<%= edit_real_time t %>
+<% end %>
+
+<% end %>
+
+View screen shot at:
+http://www.assembla.com/spaces/filestore/documents/dzmx2WWkqr3A63ab7jnrAJ/download?filename=table_view_plugin_demo.png
+
+Contribute
+==========
+
+Fork plugin on github:
+http://github.com/vitaliel/table_view
+
+Usage
+==============
+
+Fill applications that use this plugin
+
+
+Copyright (c) 2008 Vitalie Lazu, released under the MIT license
