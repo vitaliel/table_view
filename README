@@ -4,8 +4,8 @@ TableView
 This rails plugin will help you to draw useful html tables with grouping, summaries.
 Do not count anymore columns for table colspan.
 
-Example
-=======
+Few examples
+============
 
 <% table_view(@tasks) do |table| %>
 <% table.column(nil, :group => true, :attr => {:class => 'group1'}, :value => Proc.new {|t| t.project ? h(t.project.name) : nil }) do |t| %>
